@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+.dark {
+  --ui-bg: #0d1117;
+  --ui-bg-elevated: #1a1f2e;
+  --ui-bg-accented: #21263a;
+  --ui-border: oklch(100% 0 0 / 6%);
+  --ui-border-accented: oklch(100% 0 0 / 12%);
+  --ui-primary: #8ab4f8;
+}
