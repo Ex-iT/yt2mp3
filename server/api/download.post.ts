@@ -8,8 +8,8 @@ export default defineEventHandler(async (event) => {
   const ext = MIME_TO_EXT[mimeType] ?? 'webm'
   const filename = `${sanitize(title ?? 'audio')}.${ext}`
 
-  // Build list of CDN URLs to try, best first
-  const cdnUrls = urls?.length ? urls : url ? [url] : []
+  // Limit to top 3 unique URLs to avoid hanging on expired CDN links
+  const cdnUrls = (urls?.length ? urls : url ? [url] : []).slice(0, 3)
   if (cdnUrls.length === 0) {
     throw createError({ statusCode: 400, message: 'No download URLs provided' })
   }

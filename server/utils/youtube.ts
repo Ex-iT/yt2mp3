@@ -33,7 +33,7 @@ export const DOWNLOAD_CLIENTS = ['ANDROID', 'WEB', 'IOS'] as const
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-export async function fetchAudioUrl(audioUrl: string, retries = 3): Promise<Response | null> {
+export async function fetchAudioUrl(audioUrl: string, retries = 1): Promise<Response | null> {
   for (let i = 0; i <= retries; i++) {
     try {
       const res = await fetch(audioUrl, {
@@ -42,7 +42,7 @@ export async function fetchAudioUrl(audioUrl: string, retries = 3): Promise<Resp
           'Accept': '*/*',
           'Referer': 'https://www.youtube.com/',
         },
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(10000),
       })
       if (res.ok && res.body) {
         return res
