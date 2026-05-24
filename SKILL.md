@@ -15,7 +15,7 @@ Extract audio from YouTube videos. Enter a YouTube URL, get a downloadable audio
 server/api/extract.post.ts   — Nitro route: extract video metadata + stream URLs
 server/api/download.post.ts  — Nitro route: proxy CDN audio to client (with fallback re-extract)
 server/utils/innertube.ts    — Singleton InnerTube session (ANDROID client)
-server/utils/youtube.ts      — Shared YouTube helpers (tryClient, extractVideo, parseYouTubeId, MIME maps)
+server/utils/youtube.ts      — Shared YouTube helpers (tryClient, extractVideo, reExtractAudioUrl, fetchAudioUrl, parseYouTubeId, MIME maps)
 components/UrlInput.vue      — URL input with validation (full URL, youtu.be, bare ID)
 components/VideoInfo.vue     — Displays video metadata + thumbnail
 components/AudioDownloader.vue — Download button
@@ -30,35 +30,43 @@ pages/index.vue              — Main page layout
 
 - **Body**: `{ url: string }` — YouTube URL or video ID
 - **Returns**: `{ title, uploader, duration, thumbnails, bestAudio, audioStreams }`
-- Retries up to 3 attempts across ANDROID + WEB clients
-- Resets InnerTube session between attempts to bypass rate limits
+- Retries up to 3 rounds across ANDROID → WEB → IOS → MWEB → TV_EMBEDDED clients
+- 2s delay between client attempts, 5s delay between rounds
+- Resets InnerTube session between rounds; sessions cached via `UniversalCache(false)`
 
 ### POST /api/download
 
 - **Body**: `{ url: string, mimeType: string, title: string, videoId?: string }`
-- Proxies the CDN audio URL with Android User-Agent headers
-- If the CDN URL returns non-2xx, fallback re-extracts a fresh URL using `videoId`
+- Proxies the CDN audio URL with Android User-Agent headers and exponential backoff (2s, 4s, 8s) on 429
+- If the CDN URL fails, fallback re-extracts a fresh URL using `videoId` (across ANDROID, WEB, IOS)
 - Streams audio back as a downloadable file with proper `Content-Disposition`
 
 ## Data Flow
 
 1. User pastes YouTube URL or bare video ID → `UrlInput.vue` validates format
 2. `useExtractAudio().extract(url)` → POST `/api/extract`
-3. Server calls `extractVideo(videoId)` → retries ANDROID + WEB clients across up to 3 attempts, resetting session between attempts
+3. Server calls `extractVideo(videoId)` — retries 5 client types across up to 3 rounds with session resets
 4. Returns `{ title, uploader, duration, thumbnails, bestAudio, audioStreams }`
 5. `VideoInfo.vue` displays metadata
 6. User clicks Download → `useExtractAudio().download()` sends CDN URL + videoId to `/api/download`
-7. Server tries CDN URL with Android User-Agent; if it fails, re-extracts a fresh URL from InnerTube
+7. Server tries CDN URL with Android User-Agent (exponential backoff on 429); if it fails, re-extracts a fresh URL via InnerTube (ANDROID → WEB → IOS)
 8. Audio is streamed back to the browser as a blob download
 
 ## Extraction Strategy
 
-- Session created with `ClientType.ANDROID` for maximum URL availability
-- Tries ANDROID client first, falls back to WEB client
+- Session created with `ClientType.ANDROID` using `UniversalCache(false)` + `generate_session_locally: true` to avoid redundant session-fetch requests
 - Uses raw InnerTube `/player` endpoint directly (not `getBasicInfo`) to ensure streaming URLs are returned
+- Client rotation: ANDROID → WEB → IOS → MWEB → TV_EMBEDDED (5 clients in extract, 3 in download fallback)
 - Audio format is chosen by highest bitrate
-- 3 retry attempts with 2s delay between clients, 4s delay between attempts
-- Rate-limited sessions are invalidated and recreated with fresh visitor data
+- 3 retry rounds with 2s delay between clients, 5s delay between rounds
+- Session is invalidated and recreated between rounds if all clients in a round fail
+- CDN audio fetches use exponential backoff (2s, 4s, 8s) on 429 responses
+
+## Caching
+
+- Session data cached in `UniversalCache(false)` (uses OS temp dir, compatible with Vercel's ephemeral `/tmp`)
+- Session cache avoids re-fetching YouTube's `/sw.js_data` endpoint on repeated calls within the same process
+- CDN URL responses are **not** cached — each download request gets a fresh fetch
 
 ## Commands
 
@@ -79,10 +87,12 @@ The browser sends the CDN URL to the server's `/api/download` endpoint. The serv
 ## Rate Limiting
 
 YouTube aggressively rate-limits InnerTube API calls from the same IP/session. The server handles this by:
-- Cycling between ANDROID and WEB client types
-- Invalidating and recreating the InnerTube session between retry attempts
-- Adding delays between attempts (2s between clients, 4s between full attempts)
+- Cycling between 5 client types (ANDROID, WEB, IOS, MWEB, TV_EMBEDDED) — each uses a different API profile
+- Invalidating and recreating the InnerTube session between retry attempts (forces fresh visitor data)
+- Adding delays between attempts (2s between clients, 5s between full attempts)
+- CDN audio fetches use exponential backoff on 429: 2s → 4s → 8s
 - In the download endpoint: trying the CDN URL first (no API call), then falling back to re-extraction only if the CDN URL fails
+- Session caching via `UniversalCache` reduces redundant session-fetch requests
 - Client-side: native `fetch` with explicit JSON error parsing displays the server's rate-limit message instead of a generic 502
 
 ## URL Input

@@ -38,8 +38,8 @@ vercel --prebuilt
 
 ## How it works
 
-1. The server creates an Android InnerTube session via `youtubei.js`
-2. When a URL is submitted, it calls YouTube's private `/player` API endpoint (retries across ANDROID/WEB clients with session reset for rate limits)
+1. The server creates an Android InnerTube session via `youtubei.js` (cached with `UniversalCache`)
+2. When a URL is submitted, it calls YouTube's private `/player` API endpoint (retries across 5 client types across 3 rounds with session resets)
 3. Audio stream URLs are extracted and returned to the client
-4. Clicking **Download Audio** sends the CDN URL back to the server, which proxies the audio with proper Android User-Agent headers
+4. Clicking **Download Audio** sends the CDN URL back to the server, which proxies the audio with proper Android User-Agent headers (exponential backoff on 429)
 5. If the CDN URL has expired or YouTube rejects it, the server re-extracts a fresh URL automatically

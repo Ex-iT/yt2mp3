@@ -1,25 +1,5 @@
 import { Readable } from 'node:stream'
-import { MIME_TO_EXT, sanitize, tryClient } from '~/server/utils/youtube'
-
-async function fetchAudioUrl(audioUrl: string) {
-  try {
-    const res = await fetch(audioUrl, {
-      headers: {
-        'User-Agent': 'com.google.android.youtube/21.03.36 (Linux; U; Android 14; en_US)',
-        'Accept': '*/*',
-        'Referer': 'https://www.youtube.com/',
-      },
-      signal: AbortSignal.timeout(30000),
-    })
-    if (!res.ok || !res.body) {
-      return null
-    }
-    return res
-  }
-  catch {
-    return null
-  }
-}
+import { DOWNLOAD_CLIENTS, fetchAudioUrl, MIME_TO_EXT, reExtractAudioUrl, sanitize } from '~/server/utils/youtube'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ url: string, mimeType: string, title: string, videoId?: string }>(event)
@@ -35,28 +15,7 @@ export default defineEventHandler(async (event) => {
   let audioResponse = await fetchAudioUrl(url)
 
   if (!audioResponse && videoId) {
-    const { getInnerTubeSession, resetInnerTubeSession } = await import('~/server/utils/innertube')
-    const clients = ['ANDROID', 'WEB'] as const
-    for (let attempt = 0; attempt < 2 && !audioResponse; attempt++) {
-      try {
-        const yt = await getInnerTubeSession()
-        for (const client of clients) {
-          const result = await tryClient(videoId, yt, client)
-          if (result) {
-            const freshUrl = result.audioFormats.sort((a: any, b: any) => b.bitrate - a.bitrate)[0]?.url
-            if (freshUrl) {
-              audioResponse = await fetchAudioUrl(freshUrl)
-              if (audioResponse)
-                break
-            }
-          }
-        }
-      }
-      catch {
-        // InnerTube call failed (rate limited), continue to next attempt
-      }
-      resetInnerTubeSession()
-    }
+    audioResponse = await reExtractAudioUrl(videoId, DOWNLOAD_CLIENTS)
   }
 
   if (!audioResponse) {
@@ -73,5 +32,5 @@ export default defineEventHandler(async (event) => {
     setHeader(event, 'content-length', Number(cl))
   }
 
-  return sendStream(event, Readable.from(audioResponse.body as any))
+  return sendStream(event, Readable.from(audioResponse.body as unknown as ReadableStream))
 })
