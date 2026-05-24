@@ -20,7 +20,18 @@ function handleReset() {
   <div class="min-h-screen flex flex-col items-center">
     <header class="w-full flex items-center justify-between px-6 h-14 border-b border-default">
       <span><span class="text-highlighted">yt2</span><span class="text-primary">mp3</span></span>
-      <span class="text-xs text-muted">Private use only</span>
+      <span class="text-xs text-muted flex items-center gap-2">
+        Private use only
+        <a
+          href="https://github.com/Ex-iT/yt2mp3"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-default transition-colors"
+          title="View on GitHub"
+        >
+          <UIcon name="i-lucide-github" class="size-4" />
+        </a>
+      </span>
     </header>
 
     <main class="flex-1 flex flex-col items-center justify-start w-full max-w-2xl px-4 pt-[15vh]">

@@ -43,7 +43,3 @@ vercel --prebuilt
 3. Audio stream URLs are extracted and returned to the client
 4. Clicking **Download Audio** sends the CDN URL back to the server, which proxies the audio with proper Android User-Agent headers
 5. If the CDN URL has expired or YouTube rejects it, the server re-extracts a fresh URL automatically
-
-## License
-
-GPL-3.0
