@@ -20,7 +20,7 @@ Built with **Nuxt 4**, **Vue 3**, **TypeScript**, and **NuxtUI v4**.
 pnpm install
 pnpm dev
 ```
-[![Vercel](https://vercelbadge.vercel.app/api/ex-it/ex-it.nl)](https://ex-it.nl/)
+
 ## Commands
 
 | Command | Action |
