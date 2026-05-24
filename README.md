@@ -1,5 +1,8 @@
 # yt2mp3
 
+[![Vercel](https://vercelbadge.vercel.app/api/ex-it/yt2mp3)](https://yt2mp3.ex-it.nl)
+[![CI](https://img.shields.io/github/actions/workflow/status/Ex-iT/yt2mp3/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Ex-iT/yt2mp3/actions)
+
 Extract audio from YouTube videos. Paste a URL, download the audio in YouTube's native format (Opus/AAC).
 
 Built with **Nuxt 4**, **Vue 3**, **TypeScript**, and **NuxtUI v4**.
@@ -17,7 +20,7 @@ Built with **Nuxt 4**, **Vue 3**, **TypeScript**, and **NuxtUI v4**.
 pnpm install
 pnpm dev
 ```
-
+[![Vercel](https://vercelbadge.vercel.app/api/ex-it/ex-it.nl)](https://ex-it.nl/)
 ## Commands
 
 | Command | Action |
