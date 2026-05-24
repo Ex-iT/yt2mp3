@@ -62,10 +62,12 @@ export function useExtractAudio() {
     downloading.value = true
 
     try {
+      const allUrls = data.value.audioStreams.map(s => s.url).filter(Boolean)
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          urls: allUrls,
           url: stream.url,
           mimeType: stream.mimeType,
           title: data.value.title,

@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
         itag: bestAudio.itag,
       },
       audioStreams: audioFormats.map((f: any) => ({
-        url: '',
+        url: f.url ?? '',
         mimeType: mapMimeType(f.mimeType),
         bitrate: f.bitrate,
         format: formatFromMime(f.mimeType),

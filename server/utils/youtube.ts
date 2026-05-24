@@ -97,11 +97,13 @@ export async function reExtractAudioUrl(
       try {
         const result = await tryClient(videoId, yt, client)
         if (result) {
-          const freshUrl = result.audioFormats.sort((a: any, b: any) => b.bitrate - a.bitrate)[0]?.url
-          if (freshUrl) {
-            const audioResponse = await fetchAudioUrl(freshUrl, 1)
-            if (audioResponse)
-              return audioResponse
+          const sorted = result.audioFormats.sort((a: any, b: any) => b.bitrate - a.bitrate)
+          for (const fmt of sorted) {
+            if (fmt.url) {
+              const audioResponse = await fetchAudioUrl(fmt.url, 1)
+              if (audioResponse)
+                return audioResponse
+            }
           }
         }
       }

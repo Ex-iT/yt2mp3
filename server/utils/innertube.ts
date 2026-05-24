@@ -9,6 +9,7 @@ export async function getInnerTubeSession(): Promise<Innertube> {
       cache: new UniversalCache(false),
       generate_session_locally: true,
       enable_session_cache: true,
+      retrieve_innertube_config: false,
     })
   }
   return yt
